@@ -1,0 +1,8 @@
+build/
+dist/
+pixiv_crawler.egg-info
+temp/
+/test*
+ghostdriver.log
+__pycache__/
+.DS_Store
