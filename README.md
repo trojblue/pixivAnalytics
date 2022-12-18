@@ -8,6 +8,6 @@
 ## 使用
 
 
-1. 获取refresh token: 见[pixivpy](https://github.com/upbit/pixivpy) →  [selenium](https://gist.github.com/upbit/6edda27cb1644e94183291109b8a5fde)
+1. 用`pixiv_auth.py`获取refresh token: 见[pixivpy](https://github.com/upbit/pixivpy) →  [selenium](https://gist.github.com/upbit/6edda27cb1644e94183291109b8a5fde)
 2. 在private文件夹下创建*.txt, 里面放你的refresh token
-3. 修改代码开爬
+3. 修改`mypixivpy.py`代码, 开爬

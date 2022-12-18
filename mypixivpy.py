@@ -4,7 +4,7 @@ from typing import *
 import time
 import csv
 from datetime import datetime, timezone
-
+from .private.my_users import *
 from tqdm import tqdm
 
 
@@ -113,7 +113,6 @@ def do_stats(user_tup: Tuple):
 
 if __name__ == '__main__':
     user_ada = (88213414, "ada")
-    user_yada = (14626152, "yada")
-    user_poi = (19755093, "poi")
+
     # do_stats("yada")
-    do_stats(user_poi)
+    do_stats(user_ada)
