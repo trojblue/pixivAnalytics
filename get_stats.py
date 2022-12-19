@@ -1,0 +1,174 @@
+
+import os
+from pprint import pprint
+
+from tqdm import tqdm
+from pixivpy3 import *
+from typing import *
+import time
+import csv
+from datetime import datetime, timezone
+from pxdata.utils import *
+from pxdata.class_illust import *
+import statistics as st
+import argparse
+
+# 如果存在自定义设置, 导入
+try:
+    from privates.my_users import *
+except ImportError:
+    print('')
+
+def get_recover_token_usr(user:str="yada"):
+    """实际获取token:
+    https://gist.github.com/upbit/6edda27cb1644e94183291109b8a5fde
+    """
+    if user.lower() == "yada":
+        with open("privates/recover_token_yada.txt") as fd:
+            line = fd.readline()
+            return line
+    elif user.lower() == "ada":
+        with open("privates/recover_token_ada.txt") as fd:
+            line = fd.readline()
+            return line
+
+def get_recover_token():
+    """实际获取token:
+    https://gist.github.com/upbit/6edda27cb1644e94183291109b8a5fde
+    """
+    with open("privates/token.txt") as fd:
+        line = fd.readline()
+        return line
+
+
+
+def get_user_illusts(api: AppPixivAPI, user: int) -> List[Dict]:
+    """返回pixiv id=<user>的所有illust json
+    """
+    all_illusts = []
+
+    json_result = api.user_illusts(user)
+    all_illusts += json_result['illusts']
+
+    pbar = tqdm(desc="collecting info for user %s: "%user)
+    while json_result["next_url"]:
+        time.sleep(0.5)
+        next_qs = api.parse_qs(json_result.next_url)
+        json_result = api.user_illusts(**next_qs)
+        all_illusts += json_result['illusts']
+        pbar.update(30)
+
+    return all_illusts
+
+
+def get_summary_string(data_list:List[float] | List[int]) -> Tuple:
+    """返回tuple格式的mean, med和var
+    """
+    return st.mean(data_list), st.median(data_list), st.variance(data_list)
+
+
+def get_user_summary(illust_class_list:List[Illust], user, username):
+    """返回有效信息
+    :param illust_class_list:
+    """
+    illust_count = len(illust_class_list)
+    views_list = [i.total_view for i in illust_class_list]
+    bookmarks_list = [i.total_bookmarks for i in illust_class_list]
+
+    pages_list = [i.page_count for i in illust_class_list]
+    view_per_hour_list =  [float(i.view_per_hour) for i in illust_class_list]
+    bm_per_hour_list =  [float(i.bm_per_hour) for i in illust_class_list]
+
+    s1 = "用户:[%s] %s   | %s \n"%(user,username, datetime.now().ctime()) +\
+        "\n投稿数:%s  总阅读:%s  总收藏:%s  总页数:%d"%(illust_count, sum(views_list), sum(bookmarks_list), sum(pages_list)) + \
+        "\n 平均阅读/投稿:%.3f" % (sum(views_list) / illust_count) + \
+        "\n 平均收藏/投稿:%.3f" % (sum(bookmarks_list) / illust_count)+ \
+        "\n 平均收藏/阅读:%.3f" % (sum(bookmarks_list) / sum(views_list))
+
+    s2 = "平均收藏/阅读比:%.3f"%(st.mean([float(i.book_view_rate) for i in illust_class_list])) + \
+         "\n 阅读量/h (每投稿) mean:%.3f  med:%.5f  var:%.5f "%(get_summary_string(view_per_hour_list)) +\
+         "\n 收藏数/h (每投稿) mean:%.3f  med:%.5f  var:%.5f"%(get_summary_string(bm_per_hour_list)) +\
+         "\n 阅读量   (每投稿) mean:%.3f  med:%.5f  var:%.5f"%(get_summary_string(view_per_hour_list))
+
+
+    summary = (s1+"\n" + s2)
+    return summary
+
+
+def export_data(illust_list:List, user:int, username:str):
+    """
+    输入pixivpy3得到的illust_list, 导出数据到private目录下的csv和txt文件
+    :param illust_list: 获取到的illusts
+    :return: csv文件
+    """
+    # Get the current datetime with the timezone set to the past_date timezone
+
+    curr_time_str = get_time_string()
+    current_date = datetime.now(timezone.utc)
+    illust_class_list = [Illust(i, current_date) for i in illust_list]
+    file_prefix = username  # "name"
+
+    csv_filename= file_prefix + "_"+ curr_time_str + '.csv'
+    txt_filename = file_prefix + "_"+ curr_time_str + '.txt'
+
+    out_dir = "privates/csv"
+    mkdir_if_not_exist(out_dir)
+    out_path = os.path.join(out_dir, csv_filename)
+
+    summary = get_user_summary(illust_class_list, user, username)
+
+    with open(os.path.join(out_dir, txt_filename), 'w', newline='', encoding='utf-8-sig') as f:
+        f.write(summary)
+
+
+    with open(out_path, 'w', newline='', encoding='utf-8-sig') as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow(['create_date', 'id', 'title', 'views', 'bookmarks', 'width', 'height',
+                         'bookmark/h', 'view/h', 'book_view_rate', 'view_book_rate', 'comments',
+                         'pages'])
+
+        for i in illust_class_list:
+
+            # EXCEL生成URL列: =HYPERLINK("http://www.pixiv.net/artworks/"&B2)
+            writer.writerow(
+                [i.create_date, i.id, i.title, i.total_view, i.total_bookmarks, i.width, i.height,
+                 i.bm_per_hour, i.view_per_hour, i.book_view_rate, i.view_book_rate, i.total_comments,
+                 i.page_count])
+
+
+def do_stats(user: int, token=None):
+    """
+    工厂模式; 用user string对应实际方案
+    :param user: pixiv user id
+    :param token: pixiv refresh token
+    """
+    api = AppPixivAPI()
+    if token:
+        api.auth(refresh_token=token)
+    else:
+        api.auth(refresh_token=get_recover_token())  # 从txt读取
+
+    user_info = api.user_detail(user)
+    username = user_info['user']['name']
+
+    illust_list = get_user_illusts(api, user)
+    export_data(illust_list, user, username)
+    print("%d post data exported"%len(illust_list))
+
+
+def one_line_mode():
+    user_ada = 88213414
+    do_stats(user_ada)
+
+def arg_mode():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-u", "--user", type=int, help="The Pixiv user ID to use")
+    args = parser.parse_args()
+
+    user = args.user
+    do_stats(user)
+
+
+if __name__ == '__main__':
+    arg_mode()
+

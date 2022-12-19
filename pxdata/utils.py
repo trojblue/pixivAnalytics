@@ -27,6 +27,7 @@ def get_hourly_time_difference(past_date, current_date):
 
     return difference_in_hours
 
+
 def mkdir_if_not_exist(dir: str):
     """mkdir if not exist"""
     if not os.path.exists(dir):

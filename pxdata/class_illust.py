@@ -45,12 +45,13 @@ class Illust():
 
         book_view_rate = '%.3f' % (i['total_bookmarks'] / i['total_view'])
         view_book_rate = '%.3f' % (i['total_view'] / i['total_bookmarks'])
-
+        view_per_page = '%.3f' % (i['total_view'] / i['page_count'])
 
         self.bm_per_hour = bm_per_hour
         self.view_per_hour = view_per_hour
         self.book_view_rate = book_view_rate
         self.view_book_rate = view_book_rate
+        self.view_per_page = view_per_page
         # append_list_string = [get_variable_name(i) for i in append_list]
 
     def __repr__(self):
