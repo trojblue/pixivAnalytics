@@ -1,4 +1,3 @@
-
 import os
 from pprint import pprint
 
@@ -10,8 +9,10 @@ import csv
 from datetime import datetime, timezone
 from pxdata.utils import *
 from pxdata.class_illust import *
+from collections import defaultdict
 import statistics as st
 import argparse
+
 
 # 如果存在自定义设置, 导入
 try:
@@ -19,7 +20,8 @@ try:
 except ImportError:
     print('')
 
-def get_recover_token_usr(user:str="yada"):
+
+def get_recover_token_usr(user: str = "yada"):
     """实际获取token:
     https://gist.github.com/upbit/6edda27cb1644e94183291109b8a5fde
     """
@@ -32,6 +34,7 @@ def get_recover_token_usr(user:str="yada"):
             line = fd.readline()
             return line
 
+
 def get_recover_token():
     """实际获取token:
     https://gist.github.com/upbit/6edda27cb1644e94183291109b8a5fde
@@ -39,7 +42,6 @@ def get_recover_token():
     with open("privates/token.txt") as fd:
         line = fd.readline()
         return line
-
 
 
 def get_user_illusts(api: AppPixivAPI, user: int) -> List[Dict]:
@@ -50,7 +52,7 @@ def get_user_illusts(api: AppPixivAPI, user: int) -> List[Dict]:
     json_result = api.user_illusts(user)
     all_illusts += json_result['illusts']
 
-    pbar = tqdm(desc="collecting info for user %s: "%user)
+    pbar = tqdm(desc="collecting info for user %s: " % user)
     while json_result["next_url"]:
         time.sleep(0.5)
         next_qs = api.parse_qs(json_result.next_url)
@@ -61,13 +63,27 @@ def get_user_illusts(api: AppPixivAPI, user: int) -> List[Dict]:
     return all_illusts
 
 
-def get_summary_string(data_list:List[float] | List[int]) -> Tuple:
+def get_summary_nums(data_list: List[float] | List[int]) -> Tuple:
     """返回tuple格式的mean, med和var
     """
-    return st.mean(data_list), st.median(data_list), st.variance(data_list)
+    return st.mean(data_list), st.median(data_list), st.variance(data_list), max(data_list), min(data_list)
 
+def get_summary_str(data_list: List[float] | List[int]) -> str:
+    """返回tuple格式的mean, med和var
+    """
+    nums = get_summary_nums(data_list)
 
-def get_user_summary(illust_class_list:List[Illust], user, username):
+    d = defaultdict(lambda: "...")
+    d.update({
+        "mean": "%.3f"%nums[0],
+        "med": "%.3f"%nums[1],
+        "var": "%.3f" % nums[2],
+        "max": "%.3f" % nums[3],
+        "min": "%.3f" % nums[4],
+    })
+    return "mean:{mean}  med:{med}  var:{var}  max:{max}  min:{min}".format_map(d)
+
+def get_user_summary(illust_class_list: List[Illust], user, username):
     """返回有效信息
     :param illust_class_list:
     """
@@ -76,29 +92,56 @@ def get_user_summary(illust_class_list:List[Illust], user, username):
     bookmarks_list = [i.total_bookmarks for i in illust_class_list]
 
     pages_list = [i.page_count for i in illust_class_list]
-    view_per_hour_list =  [float(i.view_per_hour) for i in illust_class_list]
-    bm_per_hour_list =  [float(i.bm_per_hour) for i in illust_class_list]
+    view_per_hour_list = [float(i.view_per_hour) for i in illust_class_list]
+    bm_per_hour_list = [float(i.bm_per_hour) for i in illust_class_list]
 
-    s1 = "用户:[%s] %s   | %s \n"%(user,username, datetime.now().ctime()) +\
-        "\n投稿数:%s  总阅读:%s  总收藏:%s  总页数:%d"%(illust_count, sum(views_list), sum(bookmarks_list), sum(pages_list)) + \
-        "\n 平均阅读/投稿:%.3f" % (sum(views_list) / illust_count) + \
-        "\n 平均收藏/投稿:%.3f" % (sum(bookmarks_list) / illust_count)+ \
-        "\n 平均收藏/阅读:%.3f" % (sum(bookmarks_list) / sum(views_list))
+    book_view_rate_list = [float(i.book_view_rate) for i in illust_class_list]
+    pid_list = [i.id for i in illust_class_list]
 
-    s2 = "平均收藏/阅读比:%.3f"%(st.mean([float(i.book_view_rate) for i in illust_class_list])) + \
-         "\n 阅读量/h (每投稿) mean:%.3f  med:%.5f  var:%.5f "%(get_summary_string(view_per_hour_list)) +\
-         "\n 收藏数/h (每投稿) mean:%.3f  med:%.5f  var:%.5f"%(get_summary_string(bm_per_hour_list)) +\
-         "\n 阅读量   (每投稿) mean:%.3f  med:%.5f  var:%.5f"%(get_summary_string(view_per_hour_list))
+    s0 = get_summary_str(book_view_rate_list)
+
+    max_view = max(views_list)
+    max_bookmark = max(bookmarks_list)
 
 
-    summary = (s1+"\n" + s2)
+    d = defaultdict(lambda: "...")
+    d.update({"foo": "name"})
+
+
+    d1 = defaultdict(lambda: "...")
+    d1.update(
+        {"user": user, "username":username, "ctime":datetime.now().ctime(),
+         "i_count":illust_count, "v_count":sum(views_list), "b_count": sum(bookmarks_list), "n_count":sum(pages_list),
+         "avg_r": "%.3f"%(sum(views_list)/illust_count), "avg_b": "%.3f"%(sum(bookmarks_list)/illust_count),
+         "avg_b/r": "%.3f"%(sum(bookmarks_list)/sum(views_list)),
+         "top_r":max_view, "top_r_pid": pid_list[views_list.index(max_view)],
+         "top_b":max_bookmark, "top_b_pid":pid_list[bookmarks_list.index(max_bookmark)]}
+    )
+
+    s1 = "用户:[{username}] {user}  |  {ctime}\n" \
+         "\n" \
+         "投稿数:{i_count}  总阅读:{v_count}  总收藏:{b_count}  总图片数:{n_count}\n" \
+         " 平均阅读:{avg_r}\n" \
+         " 平均收藏:{avg_b}\n" \
+         " 平均收藏/阅读:{avg_b/r}\n" \
+         "最高阅读:{top_r}  pid{top_r_pid}\n" \
+         "最高收藏:{top_b}  pid{top_b_pid}\n".format_map(d1)
+
+    # mean, median, standard deviation
+    s3 = "每投稿收藏/阅读比  "+ get_summary_str(book_view_rate_list) + \
+         "\n 阅读量/h (每投稿) " + get_summary_str(view_per_hour_list) +\
+         "\n 收藏数/h (每投稿) " + get_summary_str(bm_per_hour_list) +\
+         "\n 阅读量   (每投稿) " + get_summary_str(views_list)
+
+    summary = (s1 + "\n" + s3)
     return summary
 
 
-def export_data(illust_list:List, user:int, username:str):
+def get_data(illust_list: List, user: int, username: str, save_data:bool=True):
     """
     输入pixivpy3得到的illust_list, 导出数据到private目录下的csv和txt文件
     :param illust_list: 获取到的illusts
+    :param save_data: 是否保存到文件
     :return: csv文件
     """
     # Get the current datetime with the timezone set to the past_date timezone
@@ -108,8 +151,8 @@ def export_data(illust_list:List, user:int, username:str):
     illust_class_list = [Illust(i, current_date) for i in illust_list]
     file_prefix = username  # "name"
 
-    csv_filename= file_prefix + "_"+ curr_time_str + '.csv'
-    txt_filename = file_prefix + "_"+ curr_time_str + '.txt'
+    csv_filename = file_prefix + "_" + curr_time_str + '.csv'
+    txt_filename = file_prefix + "_" + curr_time_str + '.txt'
 
     out_dir = "privates/csv"
     mkdir_if_not_exist(out_dir)
@@ -117,10 +160,19 @@ def export_data(illust_list:List, user:int, username:str):
 
     summary = get_user_summary(illust_class_list, user, username)
 
+    if save_data:
+        write_data(illust_class_list, out_dir, out_path, summary, txt_filename)
+        print("%d post data exported" % len(illust_list))
+
+    print(summary)
+
+
+def write_data(illust_class_list, out_dir, out_path, summary, txt_filename):
+    """
+    导出数据到文件
+    """
     with open(os.path.join(out_dir, txt_filename), 'w', newline='', encoding='utf-8-sig') as f:
         f.write(summary)
-
-
     with open(out_path, 'w', newline='', encoding='utf-8-sig') as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(['create_date', 'id', 'title', 'views', 'bookmarks', 'width', 'height',
@@ -128,7 +180,6 @@ def export_data(illust_list:List, user:int, username:str):
                          'pages'])
 
         for i in illust_class_list:
-
             # EXCEL生成URL列: =HYPERLINK("http://www.pixiv.net/artworks/"&B2)
             writer.writerow(
                 [i.create_date, i.id, i.title, i.total_view, i.total_bookmarks, i.width, i.height,
@@ -136,7 +187,7 @@ def export_data(illust_list:List, user:int, username:str):
                  i.page_count])
 
 
-def do_stats(user: int, token=None):
+def do_stats(user: int, token=None, save_data=True):
     """
     工厂模式; 用user string对应实际方案
     :param user: pixiv user id
@@ -152,13 +203,14 @@ def do_stats(user: int, token=None):
     username = user_info['user']['name']
 
     illust_list = get_user_illusts(api, user)
-    export_data(illust_list, user, username)
-    print("%d post data exported"%len(illust_list))
+    get_data(illust_list, user, username, save_data)
+
 
 
 def one_line_mode():
     user_ada = 88213414
     do_stats(user_ada)
+
 
 def arg_mode():
     parser = argparse.ArgumentParser()
@@ -169,6 +221,15 @@ def arg_mode():
     do_stats(user)
 
 
-if __name__ == '__main__':
-    arg_mode()
+def get_info_inf():
+    while True:
+        uid = input ("> 输入uid: ")
+        try:
+            uid_int = int(uid)
+            do_stats(uid_int, save_data=False)
+            print("==========")
+        except Exception:
+            continue
 
+if __name__ == '__main__':
+    get_info_inf()

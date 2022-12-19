@@ -3,6 +3,7 @@ privates
 private
 chromedriver.exe
 privates/my_users.py
+get_stats_own.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
