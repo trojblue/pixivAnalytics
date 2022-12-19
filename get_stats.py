@@ -237,4 +237,5 @@ def get_info_inf():
             continue
 
 if __name__ == '__main__':
-    get_info_inf()
+    # get_info_inf()
+    arg_mode()

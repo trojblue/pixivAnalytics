@@ -3,7 +3,7 @@
 功能目前只有两个: 爬取某个作者的所有投稿, 导出数据到csv, 导出总结数据到txt. 基于[pixivpy](https://github.com/upbit/pixivpy)
 
 包含项:
-![img_1.png](img_1.png)
+![img.png](img.png)
 
 txt总结:
 ```
