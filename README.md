@@ -6,7 +6,21 @@
 ![img_1.png](img_1.png)
 
 ## 使用
+```bash
+git clone https://github.com/trojblue/pixivAnalytics
+cd pixivAnalytics
 
+# 下载chromedriver, 放在pixiv_auth.py 同目录下
+...
+
+# 获取refresh token
+python pixiv_auth.py login
+
+# 创建txt文件存储refresh token
+echo "YOUR TOKEN HERE" > ./privates/token.txt
+
+# 修改mypixivpy.py, 卡爬
+```
 
 1. 用`pixiv_auth.py`获取refresh token: 见[pixivpy](https://github.com/upbit/pixivpy) →  [selenium](https://gist.github.com/upbit/6edda27cb1644e94183291109b8a5fde)
 2. 在private文件夹下创建*.txt, 里面放你的refresh token

@@ -9,7 +9,7 @@ from datetime import datetime
 
 
 # Local path
-COOKIE_PATH = './private/cookies.json'
+COOKIE_PATH = './privates/cookies.json'
 0
 # ======= Header =========
 
@@ -91,7 +91,7 @@ def get_cookies_tsdm_all():
     """
     try:
         # 多账户刷新
-        from private.settings import TSDM_CREDENTIALS
+        from privates.settings import TSDM_CREDENTIALS
         for i in TSDM_CREDENTIALS:
             get_cookie_pixiv(i[0], i[1])
 

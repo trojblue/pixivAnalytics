@@ -7,24 +7,33 @@ import time
 import csv
 from datetime import datetime, timezone
 
-from private.my_users import *
+from privates.my_users import *
 from pxdata.utils import *
 from pxdata.class_illust import *
 import statistics
 
 
-def get_recover_token(user:str="yada"):
+def get_recover_token_usr(user:str="yada"):
     """实际获取token:
     https://gist.github.com/upbit/6edda27cb1644e94183291109b8a5fde
     """
     if user.lower() == "yada":
-        with open("private/recover_token_yada.txt") as fd:
+        with open("privates/recover_token_yada.txt") as fd:
             line = fd.readline()
             return line
     elif user.lower() == "ada":
-        with open("private/recover_token_ada.txt") as fd:
+        with open("privates/recover_token_ada.txt") as fd:
             line = fd.readline()
             return line
+
+def get_recover_token():
+    """实际获取token:
+    https://gist.github.com/upbit/6edda27cb1644e94183291109b8a5fde
+    """
+    with open("privates/token.txt") as fd:
+        line = fd.readline()
+        return line
+
 
 
 def get_user_illusts(api: AppPixivAPI, user_tup: Tuple) -> List[Dict]:
@@ -83,7 +92,7 @@ def illusts_to_csv_single_day(illust_list:List, user_tup:Tuple):
     file_prefix = user_tup[1]  # "name"
 
     filename= file_prefix + "_"+ get_time_string() + '.csv'
-    out_dir = "./private/csv"
+    out_dir = "privates/csv"
     mkdir_if_not_exist(out_dir)
     out_path = os.path.join(out_dir, filename)
 

@@ -1,6 +1,8 @@
 #PRIVATE DATA
-private/
+privates
+private
 chromedriver.exe
+privates/my_users.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
