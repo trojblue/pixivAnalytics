@@ -1,8 +1,9 @@
 from datetime import datetime
 from typing import *
 import inspect
+import os
 
-def retrieve_name(var):
+def get_variable_name(var):
     """返回变量var名字的string格式
     """
     callers_local_vars = inspect.currentframe().f_back.f_locals.items()
@@ -11,7 +12,6 @@ def retrieve_name(var):
 
 def get_time_string():
     return datetime.now().strftime("%y.%m.%d_%H%M")
-
 
 
 def get_hourly_time_difference(past_date, current_date):
@@ -26,3 +26,8 @@ def get_hourly_time_difference(past_date, current_date):
     difference_in_hours = (current_date - past_date).total_seconds() / 3600
 
     return difference_in_hours
+
+def mkdir_if_not_exist(dir: str):
+    """mkdir if not exist"""
+    if not os.path.exists(dir):
+        os.makedirs(dir)
