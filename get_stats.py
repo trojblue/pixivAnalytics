@@ -54,7 +54,7 @@ def get_user_illusts(api: AppPixivAPI, user: int) -> List[Dict]:
 
     pbar = tqdm(desc="collecting info for user %s: " % user)
     while json_result["next_url"]:
-        time.sleep(0.5)
+        time.sleep(0.3)
         next_qs = api.parse_qs(json_result.next_url)
         json_result = api.user_illusts(**next_qs)
         all_illusts += json_result['illusts']
@@ -112,28 +112,33 @@ def get_user_summary(illust_class_list: List[Illust], user, username):
     d1.update(
         {"user": user, "username":username, "ctime":datetime.now().ctime(),
          "i_count":illust_count, "v_count":sum(views_list), "b_count": sum(bookmarks_list), "n_count":sum(pages_list),
+
          "avg_r": "%.3f"%(sum(views_list)/illust_count), "avg_b": "%.3f"%(sum(bookmarks_list)/illust_count),
          "avg_b/r": "%.3f"%(sum(bookmarks_list)/sum(views_list)),
+         "avg_n_count": "%.3f"%(sum(pages_list)/illust_count),
+
          "top_r":max_view, "top_r_pid": pid_list[views_list.index(max_view)],
          "top_b":max_bookmark, "top_b_pid":pid_list[bookmarks_list.index(max_bookmark)]}
     )
 
-    s1 = "用户:[{username}] {user}  |  {ctime}\n" \
+    s1 = "用户: [{user}] {username}  |  {ctime}\n" \
          "\n" \
          "投稿数:{i_count}  总阅读:{v_count}  总收藏:{b_count}  总图片数:{n_count}\n" \
          " 平均阅读:{avg_r}\n" \
          " 平均收藏:{avg_b}\n" \
          " 平均收藏/阅读:{avg_b/r}\n" \
-         "最高阅读:{top_r}  pid{top_r_pid}\n" \
-         "最高收藏:{top_b}  pid{top_b_pid}\n".format_map(d1)
+         " 平均图片数:{avg_n_count}\n" \
+         "最高阅读:{top_r}  pid={top_r_pid}\n" \
+         "最高收藏:{top_b}  pid={top_b_pid}\n".format_map(d1)
 
     # mean, median, standard deviation
     s3 = "每投稿收藏/阅读比  "+ get_summary_str(book_view_rate_list) + \
          "\n 阅读量/h (每投稿) " + get_summary_str(view_per_hour_list) +\
          "\n 收藏数/h (每投稿) " + get_summary_str(bm_per_hour_list) +\
-         "\n 阅读量   (每投稿) " + get_summary_str(views_list)
+         "\n 阅读量   (每投稿) " + get_summary_str(views_list) + \
+         "\n 收藏数   (每投稿) " + get_summary_str(bookmarks_list)
 
-    summary = (s1 + "\n" + s3)
+    summary = (s1 + "\n" + s3 + "\n")
     return summary
 
 
