@@ -212,9 +212,12 @@ def do_stats(user: int, token=None, save_data=True):
 
 
 
-def one_line_mode():
-    user_ada = 88213414
-    do_stats(user_ada)
+def one_line_mode(user_id:int=None):
+    if not user_id:
+        user_ada = 88213414
+        do_stats(user_ada)
+    else:
+        do_stats(user_id)
 
 
 def arg_mode():
@@ -237,5 +240,6 @@ def get_info_inf():
             continue
 
 if __name__ == '__main__':
+    one_line_mode(user_yada)
     # get_info_inf()
-    arg_mode()
+    # arg_mode()
