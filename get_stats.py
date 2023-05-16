@@ -240,6 +240,6 @@ def get_info_inf():
             continue
 
 if __name__ == '__main__':
-    # one_line_mode(user_yada)
+    # one_line_mode()
     # get_info_inf()
     arg_mode()
